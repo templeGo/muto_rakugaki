@@ -1,20 +1,21 @@
 var thiefs = [];
 var polices = [];
+var souls = [];
 
 var worldRecord = 80;
 var BGC = "#01000B";
 
-var maxThiefsSize = 200;
+var maxThiefsSize = 150;
 var maxPolicesSize = 10;
 
 function setup(){
   var myCanvas = createCanvas(windowWidth, windowHeight, WEBGL);
   myCanvas.parent("#canvas");
   background(color(BGC));
-  for(var i = 0; i < 100; i++){
+  for(var i = 0; i < 20; i++){
     thiefs.push(new Thief(random(width), random(height)));
   }
-  for(var i = 0; i < 3; i++){
+  for(var i = 0; i < 2; i++){
     polices.push(new Police(random(width), random(height)));
   }
 }
@@ -26,6 +27,16 @@ function draw(){
     thiefs.push(new Thief(mouseX, mouseY));
   }
   
+  drawThiefs();
+
+  drawPolices();
+
+  drawDisappearingSouls();
+  
+  drawFrame(30);
+}
+
+function drawThiefs(){
   for(var i = 0; i < thiefs.length; i++){
     var target = thiefs[i].randomWalk();
     for(var j = 0; j < polices.length; j++){
@@ -39,10 +50,13 @@ function draw(){
     thiefs[i].display();
 
     if(thiefs[i].isDead){
+      souls.push(new Soul(thiefs[i].location.x, thiefs[i].location.y));
       thiefs.splice(i, 1);
     }
   }
+}
 
+function drawPolices(){
   for(var i = 0; i < polices.length; i++){
     var target = polices[i].randomWalk();
     for(var j = 0; j < thiefs.length; j++){
@@ -50,9 +64,10 @@ function draw(){
       var distance = thiefLoc.sub(polices[i].location).mag();
       if(distance < worldRecord){
         worldRecord = distance;
-        target = thiefs[i].location;
+        target = thiefs[i].location.copy();
       }
     }
+    target.add(polices[i].avoidMouse(createVector(mouseX, mouseY)));
     polices[i].separate(polices);
     polices[i].seek(target);
     polices[i].update();
@@ -62,8 +77,13 @@ function draw(){
 
     worldRecord = polices[i].visibility;
   }
-  
-  drawFrame(30);
+}
+
+function drawDisappearingSouls(){
+  for(var i = 0; i < souls.length; i++){
+    souls[i].update();
+    souls[i].display();
+  }
 }
 
 function drawFrame(offset){
@@ -234,6 +254,21 @@ class Police extends Vehicle{
   randomWalk(){
       return super.randomWalk();
   }
+
+  avoidMouse(mouse){
+    var target = createVector(0, 0);
+
+    // police->mouseのベクトル
+    var diff = p5.Vector.sub(mouse, this.location);
+    // mouseとの距離
+    var d = diff.mag();
+    
+    if(d < 20){
+        target.add(diff.mult(-this.maxspeed)).mult(2);
+    }
+    
+    return target;
+}
 
   separate(polices){
       var desiredseparation = this.r*10;
@@ -418,6 +453,35 @@ class Thief extends Vehicle{
 
   IsDead(){
       this.isDead = true;
+  }
+}
+
+
+class Soul{
+  constructor(x, y){
+    this.location = createVector(x, y);
+    this.size = 0;
+    this.life = 255;
+    this.isDead = false;
+  }
+
+  update(){
+    this.size += 1;
+    this.life -= 5;
+    if(this.life < 0){
+      this.isDead = true;
+    }
+  }
+
+  display(){
+    push();
+    translate(this.location.x - windowWidth*0.5, this.location.y - windowHeight*0.5);
+    noFill();
+    var c = color("#7CB8FF");
+    c.setAlpha(this.life);
+    stroke(c);
+    ellipse(0, 0, this.size, this.size);
+    pop();
   }
 }
 
