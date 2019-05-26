@@ -8,7 +8,13 @@ var BGC = "#01000B";
 var maxThiefsSize = 150;
 var maxPolicesSize = 10;
 
+var adjust = 1;
+
 function setup(){
+  if(windowWidth < windowHeight){
+    
+    adjust = 0.6;
+  }
   var myCanvas = createCanvas(windowWidth, windowHeight, WEBGL);
   myCanvas.parent("#canvas");
   background(color(BGC));
@@ -33,7 +39,7 @@ function draw(){
 
   drawDisappearingSouls();
   
-  drawFrame(30);
+  drawFrame(30 * adjust);
 }
 
 function drawThiefs(){
@@ -45,7 +51,7 @@ function drawThiefs(){
     thiefs[i].flock(thiefs);
     thiefs[i].seek(target);
     thiefs[i].update();
-    thiefs[i].keepAwayFromWall(random(30, 35));
+    thiefs[i].keepAwayFromWall(random(30 * adjust, 35 * adjust));
     thiefs[i].bounceOffwall();
     thiefs[i].display();
 
@@ -64,14 +70,14 @@ function drawPolices(){
       var distance = thiefLoc.sub(polices[i].location).mag();
       if(distance < worldRecord){
         worldRecord = distance;
-        target = thiefs[i].location.copy();
+        target = thiefs[j].location.copy();
       }
     }
     target.add(polices[i].avoidMouse(createVector(mouseX, mouseY)));
     polices[i].separate(polices);
     polices[i].seek(target);
     polices[i].update();
-    polices[i].keepAwayFromWall(20);
+    polices[i].keepAwayFromWall(20 * adjust);
     polices[i].bounceOffwall();
     polices[i].display();
 
@@ -275,9 +281,9 @@ class Police extends Vehicle{
       var sum = createVector(0, 0);
       var count = 0;
       for(var i = 0; i < polices.length; i++){
-        var d = createVector(this.location, polices[i].location);
+        var d = p5.Vector.dist(this.location, polices[i].location);
         if((d > 0) && (d < desiredseparation)){
-          var diff = p5.Vectoror.sub(this.location, polices[i].location);
+          var diff = p5.Vector.sub(this.location, polices[i].location);
           diff.normalize();
           diff.div(d);
           sum.add(diff);
@@ -289,7 +295,7 @@ class Police extends Vehicle{
       sum.div(count);
       sum.normalize();
       sum.mult(this.maxspeed);
-      var steer = PVector.sub(sum, this.velocity); 
+      var steer = p5.Vector.sub(sum, this.velocity); 
       steer.limit(this.maxforce); 
       this.applyForce(steer);
       }
